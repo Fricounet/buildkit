@@ -375,6 +375,7 @@ EOT
 
 FROM buildkit-export AS buildkit-linux
 COPY --link --from=binaries / /usr/bin/
+COPY --link --from=nydus /out/nydus-static/* /usr/bin/
 ENV BUILDKIT_SETUP_CGROUPV2_ROOT=1
 ENTRYPOINT ["buildkitd"]
 
