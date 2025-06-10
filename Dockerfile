@@ -16,7 +16,7 @@ ARG MINIO_VERSION=RELEASE.2022-05-03T20-36-08Z
 ARG MINIO_MC_VERSION=RELEASE.2022-05-04T06-07-55Z
 ARG AZURITE_VERSION=3.33.0
 ARG GOTESTSUM_VERSION=v1.9.0
-ARG DELVE_VERSION=v1.23.1
+ARG DELVE_VERSION=v1.24.2
 
 ARG GO_VERSION=1.24
 ARG ALPINE_VERSION=3.21
@@ -137,8 +137,8 @@ ARG DNSNAME_VERSION
 ADD --keep-git-dir=true "https://github.com/containers/dnsname.git#$DNSNAME_VERSION" .
 ARG TARGETPLATFORM
 RUN --mount=target=/root/.cache,type=cache \
-    CGO_ENABLED=0 xx-go build -o /usr/bin/dnsname ./plugins/meta/dnsname && \
-    xx-verify --static /usr/bin/dnsname
+  CGO_ENABLED=0 xx-go build -o /usr/bin/dnsname ./plugins/meta/dnsname && \
+  xx-verify --static /usr/bin/dnsname
 
 FROM --platform=$BUILDPLATFORM alpine:${ALPINE_VERSION} AS cni-plugins
 RUN apk add --no-cache curl
@@ -209,13 +209,13 @@ VOLUME /var/lib/buildkit
 FROM ubuntu:24.04 AS buildkit-export-ubuntu
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    fuse3 \
-    git \
-    openssh-client \
-    pigz \
-    xz-utils \
-    iptables \
-    ca-certificates \
+  fuse3 \
+  git \
+  openssh-client \
+  pigz \
+  xz-utils \
+  iptables \
+  ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 COPY --link examples/buildctl-daemonless/buildctl-daemonless.sh /usr/bin/
 VOLUME /var/lib/buildkit
@@ -357,7 +357,7 @@ FROM gobuild-base AS dlv
 ARG DELVE_VERSION
 ARG TARGETPLATFORM
 RUN --mount=target=/root/.cache,type=cache\
-    --mount=target=/go/pkg/mod,type=cache <<EOT
+  --mount=target=/go/pkg/mod,type=cache <<EOT
   set -ex
   mkdir /out
   if [ "$(xx-info os)" = "freebsd" ]; then
@@ -385,13 +385,13 @@ COPY --link --chmod=755 <<EOF /docker-entrypoint.sh
 #!/bin/sh
 exec dlv exec /usr/bin/buildkitd \\
   --api-version=2 \\
-  -l 0.0.0.0:\${DELVE_PORT:-5000} \\
+  -l 0.0.0.0:\${DELVE_PORT:-5100} \\
   --headless=true \\
   --accept-multiclient \\
   --continue \\
   -- "\$@"
 EOF
-ENV DELVE_PORT=5000
+ENV DELVE_PORT=5100
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 FROM binaries AS buildkit-darwin
