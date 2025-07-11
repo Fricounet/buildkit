@@ -73,7 +73,7 @@ func (sr *immutableRef) GetRemotes(ctx context.Context, createIfNeeded bool, ref
 		parents, err := getAvailableBlobs(ctx, sr.cm.ContentStore, &solver.Remote{
 			Descriptors: parentChain,
 			Provider:    remote.Provider,
-		})
+		}, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -100,7 +100,11 @@ func appendRemote(parents []*solver.Remote, desc ocispecs.Descriptor, p content.
 	return
 }
 
-func getAvailableBlobs(ctx context.Context, cs content.Store, chain *solver.Remote) ([]*solver.Remote, error) {
+func getAvailableBlobs(ctx context.Context, cs content.Store, chain *solver.Remote, visited map[digest.Digest]struct{}) ([]*solver.Remote, error) {
+	if visited == nil {
+		visited = make(map[digest.Digest]struct{})
+	}
+
 	if len(chain.Descriptors) == 0 {
 		return nil, nil
 	}
@@ -108,15 +112,15 @@ func getAvailableBlobs(ctx context.Context, cs content.Store, chain *solver.Remo
 	parents, err := getAvailableBlobs(ctx, cs, &solver.Remote{
 		Descriptors: parentChain,
 		Provider:    chain.Provider,
-	})
+	}, visited)
 	if err != nil {
 		return nil, err
 	}
 	var descs []ocispecs.Descriptor
-	if err := walkBlob(ctx, cs, target, func(desc ocispecs.Descriptor) bool {
+	if _, err := walkBlobVariantsOnly(ctx, cs, target.Digest, func(desc ocispecs.Descriptor) bool {
 		descs = append(descs, desc)
 		return true
-	}); err != nil {
+	}, visited); err != nil {
 		bklog.G(ctx).WithError(err).Warn("failed to walk variant blob") // is not a critical error at this moment.
 	}
 	var res []*solver.Remote
