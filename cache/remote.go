@@ -125,6 +125,9 @@ func getAvailableBlobs(ctx context.Context, cs content.Store, chain *solver.Remo
 	}
 	var res []*solver.Remote
 	for _, desc := range descs {
+		if _, isVisited := visited[desc.Digest]; isVisited {
+			continue // skip already visited blobs
+		}
 		if len(parents) == 0 { // bottommost ref
 			res = append(res, &solver.Remote{
 				Descriptors: []ocispecs.Descriptor{desc},
